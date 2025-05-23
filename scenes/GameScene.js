@@ -116,6 +116,7 @@ const gameData = {
 export default class GameScene extends Phaser.Scene {
     constructor() {
         super("GameScene");
+        this.currentlyPainting = new Set()
     }
 
     create() {
@@ -130,7 +131,7 @@ export default class GameScene extends Phaser.Scene {
         this.incorrectSound = this.sound.add("incorrect-sound", {
             volume: 0.7,
         });
-        
+
         this.setupLevel();
     }
 
@@ -159,7 +160,7 @@ export default class GameScene extends Phaser.Scene {
         this.painter = this.add
             .image(680, 500, "painter-character")
             .setScale(0.15);
-        
+
         this.painterIdleTween = this.tweens.add({
             targets: this.painter,
             y: this.painter.y - 5,
@@ -168,7 +169,7 @@ export default class GameScene extends Phaser.Scene {
             repeat: -1,
             ease: "Sine.easeInOut",
         });
-        
+
         //Speech bubble over painter
         this.speechBubble = this.add
             .image(690, 350, "speech-bubble")
@@ -219,7 +220,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     createMissionInfo() {
-     
+
 
         //Mission info text with better formatting
         this.add
@@ -295,8 +296,46 @@ export default class GameScene extends Phaser.Scene {
         this.clickSound.play();
         const index = fenceSegment.getData("index");
 
-        // Add to painting queue
-        this.addToPaintingQueue(fenceSegment, index);
+        // Skip if already painting or painted
+        if (this.currentlyPainting.has(index) || this.paintedFenceSegments[index].visible) {
+            return;
+        }
+
+        this.startPaintingAnimation(index);
+    }
+
+    startPaintingAnimation(index) {
+        const unpaintedFence = this.fenceSegments[index];
+        const paintedFence = this.paintedFenceSegments[index];
+
+        this.currentlyPainting.add(index);
+        this.currentLevel.filled++;
+
+        // Hide unpainted fence immediately
+        unpaintedFence.setVisible(false);
+
+        // Show painted fence with animation
+        paintedFence.setVisible(true).setAlpha(0);
+
+        this.tweens.add({
+            targets: paintedFence,
+            alpha: 1,
+            duration: 1000,
+            ease: "Linear",
+            onComplete: () => {
+                this.currentlyPainting.delete(index);
+            }
+        });
+
+        // Add bounce effect
+        this.tweens.add({
+            targets: paintedFence,
+            scaleX: (this.segmentWidth / 1080) * 1.05,
+            scaleY: 0.105,
+            duration: 500,
+            yoyo: true,
+            ease: "Sine.easeInOut"
+        });
     }
 
     handlePaintedFenceClick(paintedFenceSegment) {
@@ -306,103 +345,14 @@ export default class GameScene extends Phaser.Scene {
         this.removePaint(index);
     }
 
-    addToPaintingQueue(fenceSegment, index) {
-        // Initialize painting queue if it doesn't exist
-        if (!this.paintingQueue) {
-            this.paintingQueue = [];
-        }
 
-        // Check if this segment is already in queue or already painted
-        const alreadyQueued = this.paintingQueue.some(
-            (item) => item.index === index
-        );
-        const alreadyPainted = this.paintedFenceSegments[index].visible;
-
-        if (alreadyQueued || alreadyPainted) return;
-
-        // Add to queue
-        this.paintingQueue.push({ fenceSegment, index });
-
-        // Start processing if not already painting
-        if (!this.isPainting) {
-            this.processNextPaintingTask();
-        }
-    }
-
-    processNextPaintingTask() {
-        // Check if there are tasks in queue
-        if (!this.paintingQueue || this.paintingQueue.length === 0) {
-            this.isPainting = false;
-            return;
-        }
-
-        // Get next task
-        const currentTask = this.paintingQueue.shift();
-        this.isPainting = true;
-
-        // Stop idle animation if running
-        if (this.painterIdleTween) {
-            this.painterIdleTween.remove();
-        }
-
-        // Start paining animation
-        this.revealPaintedFence(currentTask.index);
-    }
-
-    revealPaintedFence(index) {
-        const level = this.currentLevel;
-        const unpaintedFence = this.fenceSegments[index];
-        const paintedFence = this.paintedFenceSegments[index];
-
-        // Update game state
-        level.filled++;
-
-        // Show the painted fence but start fully transparent
-        paintedFence.setVisible(true);
-        paintedFence.setAlpha(0);
-
-        // Create simultaneous fade out/in effect
-        this.tweens.add({
-            targets: unpaintedFence,
-            alpha: 0,
-            duration: 1000,
-            ease: "Linear",
-        });
-
-        this.tweens.add({
-            targets: paintedFence,
-            alpha: 1,
-            duration: 1000,
-            ease: "Linear",
-            onComplete: () => {
-                unpaintedFence.setVisible(false);
-                // Process next painting task
-                this.processNextPaintingTask();
-            },
-        });
-
-        // Optional: Add a subtle scaling effect to enhance the transition
-        this.tweens.add({
-            targets: [unpaintedFence, paintedFence],
-            scaleX: (this.segmentWidth / 1080) * 1.05,
-            scaleY: 0.105,
-            duration: 500,
-            yoyo: true,
-            ease: "Sine.easeInOut",
-        });
-    }
     removePaint(index) {
-        const level = this.currentLevel;
         const unpaintedFence = this.fenceSegments[index];
         const paintedFence = this.paintedFenceSegments[index];
 
-        // Update game state
-        level.filled--;
-
-        // Hide painted fence and show unpainted fence
+        this.currentLevel.filled--;
         paintedFence.setVisible(false);
-        unpaintedFence.setVisible(true);
-        unpaintedFence.setAlpha(1);
+        unpaintedFence.setVisible(true).setAlpha(1);
 
         // Quick bounce animation
         this.tweens.add({
@@ -414,7 +364,7 @@ export default class GameScene extends Phaser.Scene {
             ease: "Back.easeOut",
             onComplete: () => {
                 unpaintedFence.setScale(this.segmentWidth / 1080, 0.1);
-            },
+            }
         });
     }
 
