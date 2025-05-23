@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paint the Fence – Fractions with Purpose</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fredoka:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #ffffff;
+        font-family: "Inter", sans-serif;
+        min-height: 100vh;
+        overflow: hidden;
+      }
+      #game-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        position: relative;
+      }
+
+      /* Enhanced floating elements */
+      .floating-elements {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      .float-shape {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 50%;
+        animation: float 12s infinite ease-in-out;
+      }
+
+      .float-shape:nth-child(1) {
+        top: 15%;
+        left: 8%;
+        animation-delay: 0s;
+      }
+      .float-shape:nth-child(2) {
+        top: 70%;
+        left: 90%;
+        animation-delay: 3s;
+      }
+      .float-shape:nth-child(3) {
+        top: 40%;
+        left: 85%;
+        animation-delay: 6s;
+      }
+      .float-shape:nth-child(4) {
+        top: 85%;
+        left: 15%;
+        animation-delay: 9s;
+      }
+      .float-shape:nth-child(5) {
+        top: 25%;
+        left: 75%;
+        animation-delay: 12s;
+      }
+      .float-shape:nth-child(6) {
+        top: 60%;
+        left: 25%;
+        animation-delay: 15s;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px) scale(1);
+          opacity: 0.5;
+        }
+        50% {
+          transform: translateY(-25px) scale(1.4);
+          opacity: 0.8;
+        }
+      }
+
+      /* Enhanced sparkle effect */
+      .sparkle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 50%;
+        animation: sparkle 3s infinite ease-in-out;
+      }
+
+      @keyframes sparkle {
+        0%,
+        100% {
+          opacity: 0;
+          transform: scale(0) rotate(0deg);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1) rotate(180deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="floating-elements">
+      <div class="float-shape"></div>
+      <div class="float-shape"></div>
+      <div class="float-shape"></div>
+      <div class="float-shape"></div>
+      <div class="float-shape"></div>
+      <div class="float-shape"></div>
+    </div>
+    <div id="game-container"></div>
+
+    <script>
+      // Enhanced game data with garden background and simplified fence painting
+      const gameData = {
+        currentLevel: 0,
+        totalScore: 0,
+        streak: 0,
+        levels: [
+          {
+            numerator: 1,
+            denominator: 2,
+            purpose: "Paint half the garden fence",
+            bg: "garden-bg",
+          },
+          {
+            numerator: 2,
+            denominator: 3,
+            purpose: "Paint two-thirds of the garden fence",
+            bg: "garden-bg",
+          },
+          {
+            numerator: 3,
+            denominator: 4,
+            purpose: "Paint three-quarters of the garden fence",
+            bg: "garden-bg",
+          },
+          {
+            numerator: 4,
+            denominator: 5,
+            purpose: "Paint four-fifths of the garden fence",
+            bg: "garden-bg",
+          },
+          {
+            numerator: 5,
+            denominator: 6,
+            purpose: "Paint five-sixths of the garden fence",
+            bg: "garden-bg",
+          },
+          {
+            numerator: 1,
+            denominator: 3,
+            purpose: "Paint one-third of the garden fence",
+            bg: "garden-bg",
+          },
+          {
+            numerator: 3,
+            denominator: 5,
+            purpose: "Paint three-fifths of the garden fence",
+            bg: "garden-bg",
+          },
+          {
+            numerator: 5,
+            denominator: 8,
+            purpose: "Paint five-eighths of the garden fence",
+            bg: "garden-bg",
+          },
+          {
+            numerator: 2,
+            denominator: 5,
+            purpose: "Paint two-fifths of the garden fence",
+            bg: "garden-bg",
+          },
+          {
+            numerator: 7,
+            denominator: 10,
+            purpose: "Paint seven-tenths of the garden fence",
+            bg: "garden-bg",
+          },
+        ],
+        generateRandomLevel() {
+          const denominators = [2, 3, 4, 5, 6, 7, 8, 10];
+          const denominator =
+            denominators[Math.floor(Math.random() * denominators.length)];
+          const numerator = Math.floor(Math.random() * (denominator - 1)) + 1;
+
+          // Convert fraction to words
+          const fractionWords = {
+            1: "one",
+            2: "two",
+            3: "three",
+            4: "four",
+            5: "five",
+            6: "six",
+            7: "seven",
+            8: "eight",
+            9: "nine",
+          };
+          const denominatorWords = {
+            2: "half",
+            3: "third",
+            4: "fourth",
+            5: "fifth",
+            6: "sixth",
+            7: "seventh",
+            8: "eighth",
+            10: "tenth",
+          };
+
+          let fractionText;
+          if (numerator === 1 && denominator === 2) {
+            fractionText = "half";
+          } else if (numerator === 1) {
+            fractionText = `one-${denominatorWords[denominator]}`;
+          } else {
+            fractionText = `${fractionWords[numerator]}-${denominatorWords[denominator]}s`;
+          }
+
+          return {
+            numerator,
+            denominator,
+            purpose: `Paint ${fractionText} of the garden fence`,
+            bg: "garden-bg",
+          };
+        },
+      };
+
+      // StartScene with enhanced visuals
+      class StartScene extends Phaser.Scene {
+        constructor() {
+          super("StartScene");
+        }
+
+        preload() {
+          // Load original assets as specified
+          this.load.image("gradient-bg", "assets/images/garden.png");
+          this.load.image("painter-character", "assets/images/character.png");
+          this.load.image("fence-post", "assets/images/fence.png");
+          this.load.image("paint-brush", "assets/images/paint_brush.png");
+          this.load.image("play-button", "assets/images/play.png");
+
+          // Preload background images for all levels
+          this.load.image("garden-bg", "assets/images/garden.png");
+         
+          // Load UI elements
+          this.load.image("wooden-sign", "assets/images/wooden_sign.png");
+          this.load.image("paint-can", "assets/images/paint_can.png");
+        }
+
+        create() {
+          // Add animated background
+          this.bg = this.add.tileSprite(400, 300, 800, 600, "gradient-bg");
+
+          // Decorative wooden sign with better proportions
+          const sign = this.add.image(400, 300, "wooden-sign").setScale(0.3);
+          sign.setTint(0xfff8e1);
+
+          // Professional play button using your play.png
+          const playButton = this.add
+            .image(400, 500, "play-button")
+            .setScale(0.2)
+            .setInteractive({ useHandCursor: true });
+
+          // Enhanced button hover effects
+          playButton.on("pointerover", () => {
+            this.tweens.add({
+              targets: playButton,
+              scale: 0.23,
+              duration: 200,
+              ease: "Back.easeOut",
+            });
+          });
+
+          playButton.on("pointerout", () => {
+            this.tweens.add({
+              targets: playButton,
+              scale: 0.2,
+              duration: 200,
+            });
+          });
+
+          // Add decorative elements with better scaling
+          const painter = this.add
+            .image(150, 400, "painter-character")
+            .setScale(0.3);
+          const paintCan = this.add.image(650, 420, "paint-can").setScale(0.2);
+
+          // Gentle bobbing animations
+          this.tweens.add({
+            targets: painter,
+            y: painter.y - 10,
+            duration: 2000,
+            yoyo: true,
+            repeat: -1,
+            ease: "Sine.easeInOut",
+          });
+
+          this.tweens.add({
+            targets: paintCan,
+            angle: 5,
+            duration: 1500,
+            yoyo: true,
+            repeat: -1,
+            ease: "Sine.easeInOut",
+          });
+
+          // Start game with smooth transition
+          playButton.on("pointerdown", () => {
+            this.cameras.main.fadeOut(500, 255, 255, 255);
+            this.time.delayedCall(500, () => {
+              this.scene.start("LoadingScene");
+            });
+          });
+        }
+      }
+
+      class LoadingScene extends Phaser.Scene {
+        constructor() {
+          super("LoadingScene");
+        }
+
+        create() {
+          // Fade in effect
+          this.cameras.main.fadeIn(500, 255, 255, 255);
+
+          // Background with parallax effect
+          this.bg = this.add.tileSprite(400, 300, 800, 600, "gradient-bg");
+
+          // Enhanced loading text with animation
+          const loadingText = this.add
+            .text(400, 220, "Preparing the paint...", {
+              fontFamily: "Inter",
+              fontSize: "32px",
+              fill: "#d84315",
+              fontWeight: "500",
+            })
+            .setOrigin(0.5);
+
+          // Animate loading text
+          this.tweens.add({
+            targets: loadingText,
+            alpha: 0.5,
+            duration: 800,
+            yoyo: true,
+            repeat: -1,
+            ease: "Sine.easeInOut",
+          });
+
+          // Paint can animation
+          const paintCan = this.add.image(400, 450, "paint-can").setScale(0.2);
+          this.tweens.add({
+            targets: paintCan,
+            angle: 10,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: "Sine.easeInOut",
+          });
+
+          // Beautiful progress bar design with glow effect
+          const progressBox = this.add.graphics();
+          progressBox.fillStyle(0xfff3e0, 1);
+          progressBox.lineStyle(3, 0xff5722, 1);
+          progressBox.fillRoundedRect(240, 250, 320, 50, 25);
+          progressBox.strokeRoundedRect(240, 250, 320, 50, 25);
+
+          const progressBar = this.add.graphics();
+          const progressGlow = this.add.graphics();
+
+          // Simulate loading with smooth animation
+          let progress = 0;
+          const timer = this.time.addEvent({
+            delay: 60,
+            callback: () => {
+              progress += 0.03;
+              progressBar.clear();
+              progressGlow.clear();
+
+              // Glowing progress bar
+              progressGlow.fillStyle(0xff9800, 0.3);
+              progressGlow.fillRoundedRect(245, 255, 310 * progress, 40, 20);
+
+              // Main progress bar
+              progressBar.fillGradientStyle(
+                0xff9800,
+                0xff5722,
+                0xff9800,
+                0xff5722
+              );
+              progressBar.fillRoundedRect(250, 260, 300 * progress, 30, 15);
+
+              if (progress >= 1) {
+                timer.remove();
+                this.cameras.main.fadeOut(300, 255, 255, 255);
+                this.time.delayedCall(300, () => {
+                  this.scene.start("GameScene");
+                });
+              }
+            },
+            callbackScope: this,
+            loop: true,
+          });
+        }
+      }
+      class GameScene extends Phaser.Scene {
+        constructor() {
+          super("GameScene");
+        }
+
+        preload() {
+          // Load assets
+          this.load.image("gradient-bg", "assets/images/garden.png");
+          this.load.image("painter-character", "assets/images/character.png");
+          this.load.image("fence-post", "assets/images/fence.png");
+          this.load.image("fence-painted", "assets/images/fence_yellow.png"); // Add this line for painted fence
+          this.load.image("paint-brush", "assets/images/paint_brush.png");
+          this.load.image("play-button", "assets/images/play.png");
+          this.load.image("speech-bubble", "assets/images/speech_bubble.png");
+          this.load.image("check-button", "assets/images/check_work.png");
+
+          // Background images
+          this.load.image("garden-bg", "assets/images/garden.png");
+        
+          //Load Sound
+          this.load.audio("click-sound", "assets/sounds/click.mp3");
+          this.load.audio("correct-sound", "assets/sounds/bonus.mp3");
+          this.load.audio("incorrect-sound", "assets/sounds/incorrect.mp3")
+
+          // UI elements
+          this.load.image("wooden-sign", "assets/images/wooden_sign.png");
+          this.load.image("paint-can", "assets/images/paint_can.png");
+          this.load.image(
+            "wooden-sign-blank",
+            "assets/images/wooden_sign_blank.png"
+          );
+        }
+        
+        create() {
+            this.clickSound = this.sound.add("click-sound", {
+            volume: 0.5,
+          });
+
+          this.correctSound = this.sound.add("correct-sound", {
+            volume: 0.7,
+          });
+
+          this.incorrectSound = this.sound.add("incorrect-sound", {
+            volume: 0.7,
+          });
+          // Fade in effect
+          this.setupLevel();
+        }
+
+       
+
+        setupLevel() {
+          // Clear previous level
+          if (this.children) {
+            this.children.removeAll();
+          }
+
+          // Get current level or generate new one
+          let level;
+          if (gameData.currentLevel < gameData.levels.length) {
+            level = gameData.levels[gameData.currentLevel];
+          } else {
+            level = gameData.generateRandomLevel();
+          }
+
+          this.currentLevel = level;
+          level.filled = 0;
+
+          // Background
+          this.bg = this.add.tileSprite(400, 300, 800, 600, level.bg);
+
+          // Add painter character (keeping your original scaling)
+          this.painter = this.add
+            .image(680, 500, "painter-character")
+            .setScale(0.15);
+          this.painterIdleTween = this.tweens.add({
+            targets: this.painter,
+            y: this.painter.y - 5,
+            duration: 3000,
+            yoyo: true,
+            repeat: -1,
+            ease: "Sine.easeInOut",
+          });
+
+          // Enhanced UI Panel with score display
+          this.createScorePanel();
+          this.createLevelInfo();
+
+          // Create fence with actual images (keeping your scaling)
+          this.createFenceStructure(level.denominator);
+
+          // Check button (keeping your design)
+          this.createCheckButton();
+
+          this.speechBubble = this.add
+            .image(690, 350, "speech-bubble")
+            .setScale(0.2);
+
+          // Helpful instruction
+          this.add
+            .text(680, 325, "Click fence sections\n to paint them!", {
+              fontFamily: "Inter",
+              fontSize: "14px",
+              fill: "#00000",
+              fontWeight: "500",
+            })
+            .setOrigin(0.5);
+
+          // Track if character is currently painting and initialize queue
+          this.isPainting = false;
+          this.paintingQueue = [];
+        }
+
+        createScorePanel() {
+          // Score background
+          const scoreBg = this.add
+            .image(120, 400, "wooden-sign-blank")
+            .setScale(0.2);
+          scoreBg.setTint(0xe8f5e9);
+
+          // Score display
+          this.add
+            .text(80, 360, `Score: ${gameData.totalScore}`, {
+              fontFamily: "Inter",
+              fontSize: "20px",
+              fill: "#ffffff",
+              fontWeight: "600",
+            })
+            .setOrigin(0.5)
+            .setAngle(-3);
+        }
+
+        createLevelInfo() {
+          // Create background first
+
+          //Level info text with better formatting
+          this.add
+            .text(400, 290, `Mission: ${this.currentLevel.purpose}`, {
+              fontFamily: "Inter",
+              fontSize: "16px",
+              fill: "#000000",
+              fontWeight: "500",
+              wordWrap: { width: 400 },
+              align: "center",
+            })
+            .setOrigin(0.5);
+        }
+
+        createFenceStructure(denominator) {
+          const totalWidth = 500;
+          const fenceHeight = 100;
+          const startX = 150;
+          const startY = 220;
+          const segmentWidth = totalWidth / denominator;
+
+          this.fenceSegments = [];
+          this.paintedFenceSegments = []; // Store painted fence images
+          this.segmentWidth = segmentWidth;
+
+          for (let i = 0; i < denominator; i++) {
+            const x = startX + i * segmentWidth + segmentWidth / 2;
+
+            // Create unpainted fence segment (keeping your scaling)
+            const fenceSegment = this.add
+              .image(x, startY, "fence-post")
+              .setDisplaySize(segmentWidth, fenceHeight)
+              .setInteractive()
+              .setData("painted", false)
+              .setData("index", i);
+
+            // Create painted fence segment (initially hidden)
+            const paintedFenceSegment = this.add
+              .image(x, startY, "fence-painted")
+              .setDisplaySize(segmentWidth, fenceHeight)
+              .setVisible(false)
+              .setData("index", i);
+
+            this.fenceSegments.push(fenceSegment);
+            this.paintedFenceSegments.push(paintedFenceSegment);
+
+            // Add interactivity with enhanced feedback
+            fenceSegment.on("pointerdown", () =>
+              this.handleFenceClick(fenceSegment)
+            );
+            fenceSegment.on("pointerover", () =>
+              this.handleFenceHover(fenceSegment, true)
+            );
+            fenceSegment.on("pointerout", () =>
+              this.handleFenceHover(fenceSegment, false)
+            );
+
+            // Also add interactivity to painted segments for unpaining
+            paintedFenceSegment.setInteractive();
+            paintedFenceSegment.on("pointerdown", () =>
+              this.handlePaintedFenceClick(paintedFenceSegment)
+            );
+            paintedFenceSegment.on("pointerover", () =>
+              this.handlePaintedFenceHover(paintedFenceSegment, true)
+            );
+            paintedFenceSegment.on("pointerout", () =>
+              this.handlePaintedFenceHover(paintedFenceSegment, false)
+            );
+          }
+        }
+
+        handleFenceClick(fenceSegment) {
+           this.clickSound.play()
+          const index = fenceSegment.getData("index");
+
+          // Add to painting queue
+          this.addToPaintingQueue(fenceSegment, index);
+        }
+
+        handlePaintedFenceClick(paintedFenceSegment) {
+          const index = paintedFenceSegment.getData("index");
+
+          // Remove paint immediately (no animation needed for unpaint)
+          this.removePaint(index);
+        }
+
+        addToPaintingQueue(fenceSegment, index) {
+          // Initialize painting queue if it doesn't exist
+          if (!this.paintingQueue) {
+            this.paintingQueue = [];
+          }
+
+          // Check if this segment is already in queue or already painted
+          const alreadyQueued = this.paintingQueue.some(
+            (item) => item.index === index
+          );
+          const alreadyPainted = this.paintedFenceSegments[index].visible;
+
+          if (alreadyQueued || alreadyPainted) return;
+
+          // Add to queue
+          this.paintingQueue.push({ fenceSegment, index });
+
+          // Start processing if not already painting
+          if (!this.isPainting) {
+            this.processNextPaintingTask();
+          }
+        }
+
+        processNextPaintingTask() {
+          // Check if there are tasks in queue
+          if (!this.paintingQueue || this.paintingQueue.length === 0) {
+            this.isPainting = false;
+            return;
+          }
+
+          // Get next task
+          const currentTask = this.paintingQueue.shift();
+          this.isPainting = true;
+
+          // Stop idle animation if running
+          if (this.painterIdleTween) {
+            this.painterIdleTween.remove();
+          }
+
+          // Start paining animation
+          this.revealPaintedFence(currentTask.index);
+        }
+
+        revealPaintedFence(index) {
+          const level = this.currentLevel;
+          const unpaintedFence = this.fenceSegments[index];
+          const paintedFence = this.paintedFenceSegments[index];
+
+          // Update game state
+          level.filled++;
+
+          // Show the painted fence but start fully transparent
+          paintedFence.setVisible(true);
+          paintedFence.setAlpha(0);
+
+          // Create simultaneous fade out/in effect
+          this.tweens.add({
+            targets: unpaintedFence,
+            alpha: 0,
+            duration: 1000,
+            ease: "Linear",
+          });
+
+          this.tweens.add({
+            targets: paintedFence,
+            alpha: 1,
+            duration: 1000,
+            ease: "Linear",
+            onComplete: () => {
+              unpaintedFence.setVisible(false);
+              // Process next painting task
+              this.processNextPaintingTask();
+            },
+          });
+
+          // Optional: Add a subtle scaling effect to enhance the transition
+          this.tweens.add({
+            targets: [unpaintedFence, paintedFence],
+            scaleX: (this.segmentWidth / 1080) * 1.05,
+            scaleY: 0.105,
+            duration: 500,
+            yoyo: true,
+            ease: "Sine.easeInOut",
+          });
+        }
+        removePaint(index) {
+          const level = this.currentLevel;
+          const unpaintedFence = this.fenceSegments[index];
+          const paintedFence = this.paintedFenceSegments[index];
+
+          // Update game state
+          level.filled--;
+
+          // Hide painted fence and show unpainted fence
+          paintedFence.setVisible(false);
+          unpaintedFence.setVisible(true);
+          unpaintedFence.setAlpha(1);
+
+          // Quick bounce animation
+          this.tweens.add({
+            targets: unpaintedFence,
+            scaleX: (this.segmentWidth / 1080) * 1.1,
+            scaleY: 0.12,
+            duration: 150,
+            yoyo: true,
+            ease: "Back.easeOut",
+            onComplete: () => {
+              unpaintedFence.setScale(this.segmentWidth / 1080, 0.1);
+            },
+          });
+        }
+
+        handleFenceHover(fenceSegment, isOver) {
+          if (!fenceSegment.getData("painted") && !this.isPainting) {
+            fenceSegment.setAlpha(isOver ? 0.8 : 1.0);
+            fenceSegment.setScale(
+              isOver
+                ? (this.segmentWidth / 1080) * 1.05
+                : this.segmentWidth / 1080,
+              isOver ? 0.12 : 0.1
+            );
+          }
+        }
+
+        handlePaintedFenceHover(paintedFenceSegment, isOver) {
+          if (!this.isPainting) {
+            paintedFenceSegment.setAlpha(isOver ? 0.8 : 1.0);
+            paintedFenceSegment.setScale(
+              isOver
+                ? (this.segmentWidth / 1080) * 1.05
+                : this.segmentWidth / 1080,
+              isOver ? 0.12 : 0.1
+            );
+          }
+        }
+
+        createCheckButton() {
+          // Professional play button using your play.png
+          const button = this.add
+            .image(400, 550, "check-button")
+            .setScale(0.3)
+            .setInteractive({ useHandCursor: true });
+
+          // Enhanced hover effects
+          button.on("pointerover", () => {
+            this.tweens.add({
+              targets: button,
+              scaleX: 0.31,
+              scaleY: 0.31,
+              duration: 200,
+              ease: "Back.easeOut",
+            });
+          });
+
+          button.on("pointerout", () => {
+            this.tweens.add({
+              targets: button,
+              scaleX: 0.3,
+              scaleY: 0.3,
+              duration: 200,
+            });
+          });
+
+          button.on("pointerdown", () => {
+            if (!this.isPainting) {
+              this.checkAnswer();
+            }
+          });
+
+          return button;
+        }
+
+        checkAnswer() {
+          const level = this.currentLevel;
+
+          if (level.filled === level.numerator) {
+
+            this.correctSound.play();
+            // Update score and streak
+            gameData.totalScore += 10 + gameData.streak * 2;
+            gameData.streak++;
+
+            // Success message with enhanced effects
+            const successBg = this.add
+              .image(400, 275, "wooden-sign-blank")
+              .setScale(0.2);
+            successBg.setTint(0xe8f5e9);
+
+            const successText = this.add
+              .text(400, 230, "Well Done", {
+                fontFamily: "Fredoka",
+                fontSize: "32px",
+                fill: "#ffffff",
+                fontWeight: "700",
+              })
+              .setOrigin(0.5)
+              .setAngle(-5);
+
+            // const contextText = this.add
+            //   .text(400, 290, `Perfect! +${10 + gameData.streak * 2} points`, {
+            //     fontFamily: "Inter",
+            //     fontSize: "18px",
+            //     fill: "#1b5e20",
+            //     fontWeight: "500",
+            //   })
+            //   .setOrigin(0.5);
+
+            // const streakText = this.add
+            //   .text(400, 310, `Streak: ${gameData.streak} 🔥`, {
+            //     fontFamily: "Inter",
+            //     fontSize: "16px",
+            //     fill: "#ff5722",
+            //     fontWeight: "600",
+            //   })
+            //   .setOrigin(0.5);
+
+            // Enhanced celebration effects
+            this.createPaintSplashResponseEffect();
+            this.createConfettiEffect();
+
+            // Animate success with bounce
+            this.tweens.add({
+              targets: successBg,
+              scaleX: { from: 0, to: 0.2 },
+              scaleY: { from: 0, to: 0.2 },
+              duration: 500,
+              ease: "Back.easeOut",
+            });
+
+            //  this.tweens.add({
+            //   targets: [successText, contextText, streakText],
+            //   scaleX: { from: 0, to: 1 },
+            //   scaleY: { from: 0, to: 1 },
+            //   duration: 500,
+            //   ease: "Back.easeOut",
+            // });
+
+            // Continue to next level
+            this.time.delayedCall(1000, () => {
+              gameData.currentLevel++;
+              this.cameras.main.fadeOut(400, 255, 255, 255);
+              this.time.delayedCall(200, () => {
+                this.cameras.main.fadeIn(400, 255, 255, 255);
+                this.setupLevel();
+              });
+            });
+          } else {
+
+            this.incorrectSound.play()
+            // Reset streak on incorrect answer
+            gameData.streak = 0;
+
+            // Enhanced incorrect answer feedback
+            this.cameras.main.shake(300, 0.01);
+
+            const tryAgain = this.add
+              .text(400, 250, "Not quite right! Keep painting!", {
+                fontFamily: "Inter",
+                fontSize: "24px",
+                fill: "#ff9800",
+                fontWeight: "600",
+                backgroundColor: "#fff3e0",
+                padding: { x: 20, y: 10 },
+              })
+              .setOrigin(0.5);
+
+            // Bounce animation for feedback
+            this.tweens.add({
+              targets: tryAgain,
+              scaleX: { from: 0, to: 1.1, to: 1 },
+              scaleY: { from: 0, to: 1.1, to: 1 },
+              duration: 400,
+              ease: "Back.easeOut",
+            });
+
+            this.tweens.add({
+              targets: tryAgain,
+              alpha: 0,
+              duration: 2500,
+              delay: 1000,
+              onComplete: () => tryAgain.destroy(),
+            });
+          }
+        }
+
+        createPaintSplashResponseEffect() {
+          // Create yellow paint drops for celebration
+          for (let i = 0; i < 15; i++) {
+            const splash = this.add
+              .circle(
+                400 + Phaser.Math.Between(-200, 200),
+                350 + Phaser.Math.Between(-120, 120),
+                Phaser.Math.Between(3, 8),
+                0xffd700
+              )
+              .setAlpha(0.8);
+
+            this.tweens.add({
+              targets: splash,
+              y: splash.y - Phaser.Math.Between(80, 150),
+              x: splash.x + Phaser.Math.Between(-50, 50),
+              alpha: 0,
+              scale: 0,
+              duration: 2000,
+              ease: "Cubic.easeOut",
+              onComplete: () => splash.destroy(),
+            });
+          }
+        }
+
+        createConfettiEffect() {
+          const confettiColors = [
+            0xffd700, 0xff69b4, 0x00ff7f, 0x1e90ff, 0xff4500,
+          ];
+
+          for (let i = 0; i < 15; i++) {
+            const confetti = this.add.rectangle(
+              400 + Phaser.Math.Between(-100, 100),
+              200,
+              8,
+              8,
+              confettiColors[Math.floor(Math.random() * confettiColors.length)]
+            );
+
+            this.tweens.add({
+              targets: confetti,
+              y: 650,
+              x: confetti.x + Phaser.Math.Between(-100, 100),
+              rotation: Phaser.Math.Between(0, Math.PI * 4),
+              alpha: 0,
+              duration: 3000,
+              ease: "Cubic.easeOut",
+              onComplete: () => confetti.destroy(),
+            });
+          }
+        }
+      }
+      const config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        backgroundColor: "#87ceeb",
+        parent: "game-container",
+        scene: [StartScene, LoadingScene, GameScene],
+        physics: {
+          default: "arcade",
+          arcade: { debug: false },
+        },
+      };
+
+      const game = new Phaser.Game(config);
+    </script>
+  </body>
+</html>
