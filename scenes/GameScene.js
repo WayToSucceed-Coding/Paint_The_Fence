@@ -305,38 +305,38 @@ export default class GameScene extends Phaser.Scene {
     }
 
     startPaintingAnimation(index) {
-        const unpaintedFence = this.fenceSegments[index];
-        const paintedFence = this.paintedFenceSegments[index];
-
-        this.currentlyPainting.add(index);
-        this.currentLevel.filled++;
-
-        // Hide unpainted fence immediately
-        unpaintedFence.setVisible(false);
-
-        // Show painted fence with animation
-        paintedFence.setVisible(true).setAlpha(0);
-
-        this.tweens.add({
-            targets: paintedFence,
-            alpha: 1,
-            duration: 1000,
-            ease: "Linear",
-            onComplete: () => {
-                this.currentlyPainting.delete(index);
+                const unpaintedFence = this.fenceSegments[index];
+                const paintedFence = this.paintedFenceSegments[index];
+                
+                this.currentlyPainting.add(index);
+                this.currentLevel.filled++;
+                
+                // Hide unpainted fence immediately
+                unpaintedFence.setVisible(false);
+                
+                // Show painted fence with animation
+                paintedFence.setVisible(true).setAlpha(0);
+                
+                this.tweens.add({
+                    targets: paintedFence,
+                    alpha: 1,
+                    duration: 1000,
+                    ease: "Linear",
+                    onComplete: () => {
+                        this.currentlyPainting.delete(index);
+                    }
+                });
+                
+                // Add bounce effect
+                this.tweens.add({
+                    targets: paintedFence,
+                    scaleX: (this.segmentWidth / 1080) * 1.05,
+                    scaleY: 0.105,
+                    duration: 500,
+                    yoyo: true,
+                    ease: "Sine.easeInOut"
+                });
             }
-        });
-
-        // Add bounce effect
-        this.tweens.add({
-            targets: paintedFence,
-            scaleX: (this.segmentWidth / 1080) * 1.05,
-            scaleY: 0.105,
-            duration: 500,
-            yoyo: true,
-            ease: "Sine.easeInOut"
-        });
-    }
 
     handlePaintedFenceClick(paintedFenceSegment) {
         const index = paintedFenceSegment.getData("index");
